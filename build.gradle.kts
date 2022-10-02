@@ -23,6 +23,8 @@ dependencies {
     implementation("me.jakejmattson:DiscordKt:0.23.4")
     implementation("com.google.apis:google-api-services-youtube:v3-rev20220719-2.0.0")
 
+    implementation("com.ibasco.agql", "agql-source-query", "1.0.7")
+
     implementation("org.jetbrains.exposed", "exposed-core", "0.39.1")
     implementation("org.jetbrains.exposed", "exposed-dao", "0.39.1")
     implementation("org.jetbrains.exposed", "exposed-jdbc", "0.39.1")

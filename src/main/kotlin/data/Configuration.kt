@@ -8,7 +8,9 @@ data class Configuration(
     val owner: Snowflake = Snowflake(0),
     val database: String = "data/database.db",
     val apis: APIs = APIs(),
-    val prefix: String = "!"
+    val prefix: String = "!",
+    val arma3ServerIP: String = "",
+    val arma3ServerPort: Int = 2303
 ) : Data()
 
 

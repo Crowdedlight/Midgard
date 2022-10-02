@@ -31,3 +31,4 @@
 | exchange     | Amount, From, To | Currency Exchange Rates    |
 | info         |                  | Bot info for Midgard       |
 | ping         |                  | Ping the Bot               |
+
