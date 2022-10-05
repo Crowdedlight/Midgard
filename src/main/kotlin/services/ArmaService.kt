@@ -9,6 +9,7 @@ import me.jakejmattson.discordkt.Discord
 import me.jakejmattson.discordkt.annotations.Service
 import org.jetbrains.exposed.sql.*
 import tech.grimm.midgard.data.Configuration
+import java.lang.Exception
 import java.net.InetSocketAddress
 import java.util.*
 import kotlin.concurrent.timerTask
@@ -17,38 +18,43 @@ import kotlin.concurrent.timerTask
 class ArmaService(private val discord: Discord, private val configuration: Configuration) {
 
     init {
-        // initial call for first update, then we start timer for 10s updates. Have to wrap in a timer
-        Timer().schedule(timerTask {
-            runBlocking {
-                this@ArmaService.updatePresence(discord)
-            }
-        }, 500)
-
+        // run update every 10s with an initial delay of 1s
         Timer().scheduleAtFixedRate(timerTask {
             runBlocking {
                 this@ArmaService.updatePresence(discord)
             }
-        }, 10000, 2000)
+        }, 500, 30000)
     }
 
     suspend fun updatePresence(discord: Discord) {
         val serverInfo = this@ArmaService.getArma3Data(configuration.arma3ServerIP, configuration.arma3ServerPort)
-        val modpack = this@ArmaService.getCurrentModpack(serverInfo.second.result.values)
+
+        // if server is offline, we received an exception here and are just updating presence with offline server
+        if (serverInfo.first == null) {
+            discord.kord.editPresence { watching("Digby: Server Offline") }
+            return
+        }
+
+        val modpack = this@ArmaService.getCurrentModpack(serverInfo.second!!.result.values)
         // build string
-        val currPlayers = serverInfo.first.result.numOfPlayers
-        val maxPlayers = serverInfo.first.result.maxPlayers
+        val currPlayers = serverInfo.first!!.result.numOfPlayers
+        val maxPlayers = serverInfo.first!!.result.maxPlayers
 
         discord.kord.editPresence { watching("Digby: $currPlayers/$maxPlayers | $modpack") }
     }
 
-    suspend fun getArma3Data(address: String, port: Int): Pair<SourceQueryInfoResponse, SourceQueryRulesResponse> {
+    suspend fun getArma3Data(address: String, port: Int): Pair<SourceQueryInfoResponse?, SourceQueryRulesResponse?> {
         // query arma server for info and players with steam-query api
-        SourceQueryClient().use { client ->
-            val serverCon = InetSocketAddress(address, port)
-            val info: SourceQueryInfoResponse = client.getInfo(serverCon).join()
-            val rules: SourceQueryRulesResponse = client.getRules(serverCon).join()
+        try {
+            SourceQueryClient().use { client ->
+                val serverCon = InetSocketAddress(address, port)
+                val info: SourceQueryInfoResponse = client.getInfo(serverCon).join()
+                val rules: SourceQueryRulesResponse = client.getRules(serverCon).join()
 
-            return Pair(info, rules)
+                return Pair(info, rules)
+            }
+        } catch (e: Exception) {
+            return Pair(null,null)
         }
     }
 
